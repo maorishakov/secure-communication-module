@@ -10,6 +10,7 @@ class MessageType(IntEnum):
     PONG = 201
     ERROR = 250
 
+
 @dataclass(frozen=True, slots=True)
 class Message:
     msg_type: MessageType
