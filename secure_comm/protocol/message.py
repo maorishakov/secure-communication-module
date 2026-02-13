@@ -1,6 +1,11 @@
 from enum import IntEnum
 from dataclasses import dataclass
 
+"""
+The language
+"""
+
+
 class MessageType(IntEnum):
 
     HANDSHAKE_HELLO = 1

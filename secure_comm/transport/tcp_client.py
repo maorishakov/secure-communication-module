@@ -37,6 +37,7 @@ class TCPClient:
                 self._sock = None
                 print("Connection closed")
 
+    # Message → framing.encode_message → sendall
     def send_message(self, msg: Message) -> None:
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as client_socket:
             client_socket.connect((self.host, self.port))
@@ -44,8 +45,3 @@ class TCPClient:
             frame = encode_message(msg)
             client_socket.sendall(frame)  # Data must be encoded to bytes
             print(f"Sent: {msg}")
-
-
-
-
-

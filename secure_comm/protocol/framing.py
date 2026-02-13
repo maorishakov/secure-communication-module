@@ -1,6 +1,13 @@
 import struct
 from .message import Message, MessageType
 
+"""
+The binary format of the messages 
+encode message to bytes
+decode bytes to message
+"""
+
+
 MAGIC = b"SC"
 VERSION = 1
 
@@ -21,6 +28,7 @@ class ProtocolError(ValueError):
 
 # Message → bytes
 
+
 def encode_message(msg: Message) -> bytes:
     if not (0 <= msg.seq <= 0xFFFF):
         raise ProtocolError("seq must be in range 0..65535")
@@ -33,7 +41,7 @@ def encode_message(msg: Message) -> bytes:
     return header + payload
 
 
-#bytes → Message
+# bytes → Message
 
 def decode_message(frame: bytes) -> Message:
     if len(frame) < HEADER_SIZE:

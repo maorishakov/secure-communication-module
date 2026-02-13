@@ -2,6 +2,10 @@ from .framing import decode_message, decode_header, HEADER_SIZE, ProtocolError
 from .message import Message
 
 
+"""
+Take the bytes that come from recv() (in unexpected chunks), and extract a complete message list from them
+"""
+
 class StreamParser:
 
     def __init__(self):
@@ -23,9 +27,9 @@ class StreamParser:
                 break
 
             header_bytes = bytes(self._buf[:HEADER_SIZE])
-            msg_type, paylod_length, seq = decode_header(header_bytes)
+            msg_type, payload_length, seq = decode_header(header_bytes)
 
-            frame_size = HEADER_SIZE + paylod_length
+            frame_size = HEADER_SIZE + payload_length
 
             # not enough bytes for frame
             if len(self._buf) < frame_size:
