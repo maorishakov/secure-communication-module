@@ -10,6 +10,10 @@ class TCPServer:
     def __init__(self, host: str, port: int):
         self.host = host
         self.port = port
+        self._stop = threading.Event()
+
+    def stop(self) -> None:
+        self._stop.set()
 
     def _rx_loop(self, conn: socket.socket, parser: StreamParser, inbox: "queue.Queue[Message]") -> None:
         """
@@ -18,39 +22,43 @@ class TCPServer:
         - feed into StreamParser
         - put complete Message objects into inbox
         """
-        while True:
-            data = conn.recv(4096)
-            if not data:
-                # client disconnected
+        # חשוב: timeout כדי שלא ניתקע לנצח על recv()
+        conn.settimeout(0.5)
+
+        while not self._stop.is_set():
+            try:
+                data = conn.recv(4096)
+            except socket.timeout:
+                continue
+            except OSError:
                 break
 
-            messages = parser.feed(data)
+            if not data:
+                break
+
+            try:
+                messages = parser.feed(data)
+            except Exception:
+                break
+
             for msg in messages:
                 inbox.put(msg)
 
     def _handle_client(self, conn, addr):
-        # IMPORTANT: per-connection state (no mixing between clients)
         parser = StreamParser()
         inbox: "queue.Queue[Message]" = queue.Queue()
 
         with conn:
-            # start RX thread for this connection
             rx_thread = threading.Thread(target=self._rx_loop, args=(conn, parser, inbox), daemon=True)
             rx_thread.start()
 
-            # Main thread: consume messages and handle them
-            # We keep running while:
-            # - RX thread is alive OR
-            # - there are still messages left in inbox
-            while rx_thread.is_alive() or not inbox.empty():
+            while (not self._stop.is_set()) and (rx_thread.is_alive() or not inbox.empty()):
                 try:
                     msg = inbox.get(timeout=0.5)
                 except queue.Empty:
                     continue
 
-                print(
-                    f"msg: type={msg.msg_type.name} seq={msg.seq} payload_len={len(msg.payload)}"
-                )
+                print(f"msg: type={msg.msg_type.name} seq={msg.seq} payload_len={len(msg.payload)}")
                 print(msg.payload)
 
         print("client disconnected")
@@ -61,13 +69,27 @@ class TCPServer:
             server_sock.bind((self.host, self.port))
             server_sock.listen(1)
 
+            server_sock.settimeout(0.5)
+
             print(f"Listening on {self.host}:{self.port}")
 
-            while True:
-                conn, addr = server_sock.accept()
-                print(f"Connected by {addr}")
+            try:
+                while not self._stop.is_set():
+                    try:
+                        conn, addr = server_sock.accept()
+                    except socket.timeout:
+                        continue
+                    except OSError:
+                        break
 
-                client_thread = threading.Thread(target=self._handle_client, args=(conn, addr), daemon=True)
-                client_thread.start()
+                    print(f"Connected by {addr}")
+                    client_thread = threading.Thread(
+                        target=self._handle_client, args=(conn, addr), daemon=True
+                    )
+                    client_thread.start()
 
+            except KeyboardInterrupt:
+                print("\nStopping server...")
+                self.stop()
 
+            print("Server stopped cleanly.")
