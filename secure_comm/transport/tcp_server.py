@@ -94,9 +94,7 @@ class TCPServer:
                         break
 
                     print(f"Connected by {addr}")
-                    client_thread = threading.Thread(
-                        target=self._handle_client, args=(conn, addr), daemon=True
-                    )
+                    client_thread = threading.Thread(target=self._handle_client, args=(conn, addr), daemon=True)
                     client_thread.start()
 
             except KeyboardInterrupt:

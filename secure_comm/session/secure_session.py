@@ -32,6 +32,7 @@ class SecureSession:
 
         raise TimeoutError("Handshake timed out")
 
+
     @property
     def handshake_complete(self) -> bool:
         return self._handshake_complete
