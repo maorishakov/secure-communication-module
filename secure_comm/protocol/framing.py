@@ -7,7 +7,7 @@ encode message to bytes
 decode bytes to message
 """
 
-
+#SC = secure comm
 MAGIC = b"SC"
 VERSION = 1
 
@@ -26,8 +26,8 @@ HEADER_SIZE = struct.calcsize(_HEADER_FMT)
 class ProtocolError(ValueError):
     pass
 
-# Message → bytes
 
+# Message → bytes
 
 def encode_message(msg: Message) -> bytes:
     if not (0 <= msg.seq <= 0xFFFF):

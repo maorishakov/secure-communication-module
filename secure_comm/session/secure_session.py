@@ -31,3 +31,25 @@ class SecureSession:
                 return
 
         raise TimeoutError("Handshake timed out")
+
+
+    @property
+    def handshake_complete(self) -> bool:
+        return self._handshake_complete
+
+    def send_data(self, payload: bytes) -> int:
+        if not self._handshake_complete:
+            raise RuntimeError("Handshake not complete. Call handshake_client() first.")
+
+        if not isinstance(payload, (bytes, bytearray)):
+            raise TypeError("payload must be bytes")
+
+        seq = self._next_seq()
+        msg = Message(
+            msg_type=MessageType.DATA,
+            seq=seq,
+            payload=bytes(payload),
+        )
+        self._transport.send(msg)
+        return seq
+

@@ -46,9 +46,6 @@ class TCPServer:
                 inbox.put(msg)
 
     def send(self, conn: socket.socket, msg: Message):
-        # if not self._connected:
-        #     raise RuntimeError("Client not connected")
-
         frame = encode_message(msg)
         conn.sendall(frame)
         print(f"Sent: type={msg.msg_type.name} seq={msg.seq} payload_len={len(msg.payload)}")
@@ -97,9 +94,7 @@ class TCPServer:
                         break
 
                     print(f"Connected by {addr}")
-                    client_thread = threading.Thread(
-                        target=self._handle_client, args=(conn, addr), daemon=True
-                    )
+                    client_thread = threading.Thread(target=self._handle_client, args=(conn, addr), daemon=True)
                     client_thread.start()
 
             except KeyboardInterrupt:
