@@ -12,6 +12,7 @@ def main():
 
     session.send_data(b"first secure payload")
     session.send_data(b"second secure payload")
+
     print("Sent 2 DATA messages ✅")
 
     client.close()
