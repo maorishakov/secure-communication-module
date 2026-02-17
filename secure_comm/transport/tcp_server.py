@@ -2,8 +2,9 @@ import socket
 import threading
 import queue
 
+from secure_comm.protocol.framing import encode_message
 from secure_comm.protocol.stream_parser import StreamParser
-from secure_comm.protocol.message import Message
+from secure_comm.protocol.message import Message, MessageType
 
 
 class TCPServer:
@@ -22,7 +23,6 @@ class TCPServer:
         - feed into StreamParser
         - put complete Message objects into inbox
         """
-        # חשוב: timeout כדי שלא ניתקע לנצח על recv()
         conn.settimeout(0.5)
 
         while not self._stop.is_set():
@@ -38,11 +38,21 @@ class TCPServer:
 
             try:
                 messages = parser.feed(data)
-            except Exception:
+            except Exception as e:
+                print(f"Parser error: {e}")
                 break
 
             for msg in messages:
                 inbox.put(msg)
+
+    def send(self, conn: socket.socket, msg: Message):
+        # if not self._connected:
+        #     raise RuntimeError("Client not connected")
+
+        frame = encode_message(msg)
+        conn.sendall(frame)
+        print(f"Sent: type={msg.msg_type.name} seq={msg.seq} payload_len={len(msg.payload)}")
+        print(f"Payload={msg.payload}")
 
     def _handle_client(self, conn, addr):
         parser = StreamParser()
@@ -61,13 +71,17 @@ class TCPServer:
                 print(f"msg: type={msg.msg_type.name} seq={msg.seq} payload_len={len(msg.payload)}")
                 print(msg.payload)
 
+                if msg.msg_type == MessageType.HANDSHAKE_HELLO:
+                    reply_msg = Message(msg_type=MessageType.HANDSHAKE_REPLY, seq=msg.seq, payload=b"")
+                    self.send(conn, reply_msg)
+
         print("client disconnected")
 
     def start(self) -> None:
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as server_sock:
             server_sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
             server_sock.bind((self.host, self.port))
-            server_sock.listen(1)
+            server_sock.listen(50)
 
             server_sock.settimeout(0.5)
 
