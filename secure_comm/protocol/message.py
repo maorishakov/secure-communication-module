@@ -3,6 +3,7 @@ from dataclasses import dataclass
 
 """
 The language
+Defines the types of messages and their structure
 """
 
 
@@ -15,6 +16,7 @@ class MessageType(IntEnum):
     PONG = 201
     ERROR = 250
 
+# frozen=True -> The object is immutable after creation
 
 @dataclass(frozen=True, slots=True)
 class Message:
